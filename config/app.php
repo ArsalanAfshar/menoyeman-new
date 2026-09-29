@@ -72,17 +72,17 @@ return [
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
-    | The application locale determines the default locale that will be used
-    | by Laravel's translation / localization methods. This option can be
-    | set to any locale for which you plan to have translation strings.
+    | The product is Persian-first: all user-facing strings live in
+    | lang/fa/* and every view is RTL. Dates are STORED in UTC and DISPLAYED
+    | as Jalali in Asia/Tehran (see App\Support\JalaliDate).
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'fa'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'faker_locale' => env('APP_FAKER_LOCALE', 'fa_IR'),
 
     /*
     |--------------------------------------------------------------------------
