@@ -34,7 +34,7 @@
     <div class="relative flex min-h-screen flex-col">
         <header class="flex items-center justify-between px-6 py-5">
             <a href="{{ route('home') }}" class="flex items-center gap-2" aria-label="منوی من">
-                <img src="/brand/logo.svg" alt="منوی من" class="h-12 w-auto">
+                <img src="/brand/logo-96.png" alt="منوی من" class="h-12 w-auto" width="96" height="96" loading="eager">
             </a>
             @yield('header-actions')
         </header>

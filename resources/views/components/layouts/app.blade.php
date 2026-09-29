@@ -24,7 +24,7 @@
                x-cloak>
             <div class="flex h-16 items-center justify-between border-b border-ink-100 px-5">
                 <a href="{{ route('panel.dashboard') }}" class="flex items-center">
-                    <img src="/brand/logo.svg" alt="منوی من" class="h-10 w-auto">
+                    <img src="/brand/logo-96.png" alt="منوی من" class="h-10 w-auto" width="96" height="96" loading="eager">
                 </a>
                 <button class="compact p-2 text-ink-500 lg:hidden" @click="sidebarOpen = false" aria-label="بستن منو">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>

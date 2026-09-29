@@ -117,3 +117,57 @@ migrations through `Artisan::call('migrate')` instead of the `$this->artisan()` 
 **Why:** The helper crashes the php-wasm runtime used during development; behavior on real PHP
 is identical.
 **Consequence:** Use this trait in tests instead of `RefreshDatabase` directly.
+
+### D15. Logo raster inside SVG is a performance and Iran-CDN bug
+
+**Decision:** The owner's `resources/brand/logo.svg` embeds a 3000px PNG as base64 (≈291KB).
+The UI must never serve this SVG directly. `scripts/build-brand-assets.php` now extracts the
+raster and generates small transparent PNGs (`public/brand/logo-32/48/64/96/128.png`). The
+layouts use `logo-96.png` (≈3.7KB, 7KB budget) with explicit width/height and eager loading.
+**Why:** 297KB SVG blocks LCP on mobile and violates the \"no CDN, everything local but tiny\"
+rule. PNG is faster, cacheable, and works everywhere.
+**Consequence:** Any future brand asset change must re-run `php scripts/build-brand-assets.php`
+and `npm run build`, then commit `public/brand` and `public/build`.
+
+### D16. CSRF must be disabled in automated tests, but only CSRF
+
+**Decision:** `tests/TestCase.php::setUp()` calls `withoutMiddleware([PreventRequestForgery,
+VerifyCsrfToken])`. In Laravel 13 the web group uses `PreventRequestForgery`, not the legacy
+`VerifyCsrfToken`; both are disabled to avoid 419 on POST. All other web middleware
+(SecurityHeaders, tenant, session, etc.) stays enabled.
+**Why:** The simplest and safest for tests; CSRF is irrelevant in the test harness and would
+require manually passing tokens. Disabling all middleware (`withoutMiddleware()`) breaks
+`$errors` sharing and auth, so we disable only the two CSRF classes.
+**Consequence:** SecurityHeaders and tenant isolation are still tested via dedicated Feature
+tests.
+
+### D17. Autoloader escaping and classmap generation under php-wasm
+
+**Decision:** Vendor is restored via a Node script (`/tmp/clone-vendor.mjs`) because no PHP
+binary exists in the sandbox. The script must escape PSR-4 prefixes as `'App\\'` (two slashes
+in file) and use `__DIR__ . '/../../' . 'app'` for root paths, `__DIR__ . '/../' . 'pkg/src'`
+for vendor. Classmap must be generated via `token_get_all` (not regex) to avoid matching
+docblocks like `class is not covered`, and must include `T_ENUM` for `SortDirection`.
+**Why:** The original regex produced entries like `'PHPUnit\TextUI\is'` and missed real classes.
+**Consequence:** When composer.lock changes, re-run the classmap generator and verify
+`findFile('App\Support\Persian')` resolves.
+
+### D18. SortDirection polyfill for PHP 8.3 vs Laravel 13
+
+**Decision:** Laravel 13 uses the PHP 8.4+ `SortDirection` enum. On PHP 8.3 we rely on
+`symfony/polyfill-php86` which provides the enum via classmap `Resources/stubs/SortDirection.php`.
+Our custom classmap generator must scan that stub and the PSR-4 `PHPUnit\` must be added to
+`autoload_psr4.php` to cover any classmap misses.
+**Why:** Without the polyfill, `Collection::sortBy` throws `Class SortDirection not found`.
+**Consequence:** Keep `symfony/polyfill-php86` in composer.json and ensure its stub is in the
+classmap; add `PHPUnit\` PSR-4 mapping when vendor is cloned manually.
+
+### D19. APP_KEY in phpunit.xml and opcache disabled in wasm
+
+**Decision:** `phpunit.xml` includes a testing `APP_KEY` (base64) so encryption works without
+a `.env`. The wasm php.ini disables opcache (`opcache.enable=0`, `enable_cli=0`) to avoid
+`is_path_to_shared_fs mount undefined` flock errors on NODEFS.
+**Why:** php-wasm mounts host FS via NODEFS which does not support flock; opcache file_cache
+uses flock and crashes. Disabling opcache is safe for tests.
+**Consequence:** Any new phpunit run via wasm must write `/internal/shared/php.ini` with opcache
+off and define STDERR/STDOUT/STDIN + set `$_SERVER['argv']` and `$GLOBALS['_composer_autoload_path']`.
