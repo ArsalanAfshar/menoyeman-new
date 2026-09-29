@@ -120,6 +120,22 @@ function writeIco(array $pngPaths, string $path): void
 
 echo "Building brand assets from logo ({$sw}x{$sh}, trimmed {$cw}x{$ch})...\n";
 
+// ---- 1.5 Small brand PNGs for UI (fix raster-in-SVG bloat) -------------------
+// The UI must use public/brand/logo-96.png (~7KB) not the 297KB logo.svg.
+@mkdir($outPublic . '/brand', 0755, true);
+foreach ([32, 48, 64, 96, 128] as $s) {
+    $img = logoOn($src, $minX, $minY, $cw, $ch, $s, max(1, (int) round($s * 0.06)), []);
+    savePng($img, $outPublic . "/brand/logo-{$s}.png");
+    imagedestroy($img);
+}
+// Also keep a copy in resources/brand for reference
+@mkdir($outBrand, 0755, true);
+foreach ([96] as $s) {
+    $img = logoOn($src, $minX, $minY, $cw, $ch, $s, max(1, (int) round($s * 0.06)), []);
+    savePng($img, $outBrand . "/logo-{$s}.png");
+    imagedestroy($img);
+}
+
 // ---- 2. Icons ---------------------------------------------------------------
 $favSizes = [16, 32, 48];
 $icoSources = [];
