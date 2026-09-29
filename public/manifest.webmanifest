@@ -1,0 +1,30 @@
+{
+    "name": "منوی من — منوی دیجیتال رستوران و کافه",
+    "short_name": "منوی من",
+    "description": "ساخت منوی دیجیتال و دریافت سفارش آنلاین",
+    "lang": "fa-IR",
+    "dir": "rtl",
+    "start_url": "/panel",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#FFF7ED",
+    "theme_color": "#F15A22",
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/icon-512-maskable.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
