@@ -1,0 +1,187 @@
+/*
+|--------------------------------------------------------------------------
+| MenoyeMan design system (Tailwind CSS 4)
+|--------------------------------------------------------------------------
+| Brand: orange, sampled from the owner's logo (#F15A22 — source of truth).
+| All tokens below are the ONLY colors allowed in product UI. See
+| docs/BRAND.md for the palette, contrast report and usage rules.
+|
+| Light mode base: warm off-whites. Dark mode base: warm dark (#1C1917).
+| Semantic colors (success/danger/warning) stay visually distinct from the
+| orange brand; destructive actions are NEVER orange.
+*/
+
+@import 'tailwindcss';
+
+/* Self-hosted Vazirmatn (no external CDNs — Iran-hosting friendly). */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/Vazirmatn-Variable.woff2') format('woff2 supports variations'),
+         url('../fonts/Vazirmatn-Variable.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@theme {
+    /* Typography */
+    --font-sans: 'Vazirmatn', ui-sans-serif, system-ui, sans-serif;
+
+    /*
+     * Brand scale (logo orange at 500).
+     * 600 is the default "white text on orange" step (AA verified).
+     */
+    --color-brand-50: #fff7ed;
+    --color-brand-100: #ffeedc;
+    --color-brand-200: #fdd9b4;
+    --color-brand-300: #f9b27b;
+    --color-brand-400: #f58443;
+    --color-brand-500: #f15a22;
+    --color-brand-600: #cc4210;
+    --color-brand-700: #b2370e;
+    --color-brand-800: #8e2d0f;
+    --color-brand-900: #73270f;
+
+    /* Warm neutrals (light mode surfaces + text) */
+    --color-ink-50: #fafaf9;
+    --color-ink-100: #f5f5f4;
+    --color-ink-200: #e7e5e4;
+    --color-ink-300: #d6d3d1;
+    --color-ink-400: #a8a29e;
+    --color-ink-500: #78716c;
+    --color-ink-600: #57534e;
+    --color-ink-700: #44403c;
+    --color-ink-800: #292524;
+    --color-ink-900: #1c1917;
+
+    /* Semantic (keep distinguishable from brand orange) */
+    --color-success-50: #f0fdf4;
+    --color-success-600: #15803d;
+    --color-success-700: #166534;
+    --color-danger-50: #fef2f2;
+    --color-danger-600: #b91c1c;
+    --color-danger-700: #991b1b;
+    --color-warning-50: #fefce8;
+    --color-warning-500: #eab308;
+    --color-warning-700: #a16207;
+
+    /* Radii & shadows — soft, warm, modern */
+    --radius-card: 1rem;
+
+    --shadow-soft: 0 1px 2px rgb(28 25 23 / 0.05), 0 8px 24px -8px rgb(28 25 23 / 0.08);
+    --shadow-lift: 0 2px 4px rgb(28 25 23 / 0.06), 0 16px 40px -12px rgb(28 25 23 / 0.16);
+}
+
+/* Base layer: RTL-first Persian product */
+@layer base {
+    html {
+        direction: rtl;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    body {
+        @apply bg-ink-50 text-ink-900 font-sans antialiased;
+        font-feature-settings: 'ss01'; /* Vazirmatn Persian-friendly features */
+    }
+
+    /* Persian digits: let CSS render numbers with Persian locale where possible */
+    .fa-digits,
+    input[type='text'].fa-digits {
+        font-variant-numeric: persian-digits;
+    }
+
+    /* Focus visibility — brand ring, keyboard friendly */
+    :focus-visible {
+        outline: 2px solid var(--color-brand-600);
+        outline-offset: 2px;
+    }
+
+    /* Touch targets */
+    button,
+    a,
+    input,
+    select,
+    textarea,
+    [role='button'] {
+        min-height: 2.75rem; /* 44px */
+    }
+    a.inline-link,
+    button.compact,
+    .compact {
+        min-height: auto;
+    }
+
+    ::selection {
+        background: var(--color-brand-200);
+        color: var(--color-ink-900);
+    }
+}
+
+/* Reusable component classes (kept small; most UI is Blade components).
+   Base shapes are @utility so variant classes can @apply them. */
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none;
+}
+
+@utility input {
+    @apply w-full rounded-xl border border-ink-200 bg-white px-4 py-2.5 text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+}
+
+@layer components {
+    .btn-primary {
+        /* White on brand-600 = AA 4.82:1 */
+        @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
+    }
+
+    .btn-secondary {
+        @apply btn bg-white text-brand-700 border border-brand-200 hover:bg-brand-50;
+    }
+
+    .btn-ghost {
+        @apply btn text-ink-700 hover:bg-ink-100;
+    }
+
+    .btn-danger {
+        @apply btn bg-danger-600 text-white hover:bg-danger-700;
+    }
+
+    .label {
+        @apply mb-1.5 block text-sm font-medium text-ink-700;
+    }
+
+    .card {
+        @apply rounded-2xl bg-white shadow-soft border border-ink-100;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+    }
+}
+
+/* Dark mode (panels): warm-dark base with orange accents */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+    .dark body {
+        @apply bg-ink-900 text-ink-50;
+    }
+
+    .dark .input {
+        @apply bg-ink-800 border-ink-700 text-ink-50 placeholder:text-ink-400 focus:border-brand-400 focus:ring-brand-900;
+    }
+
+    .dark .card {
+        @apply bg-ink-800 border-ink-700;
+    }
+
+    .dark .btn-secondary {
+        @apply bg-ink-800 border-ink-700 text-brand-300 hover:bg-ink-700;
+    }
+
+    .dark .btn-ghost {
+        @apply text-ink-100 hover:bg-ink-800;
+    }
+}

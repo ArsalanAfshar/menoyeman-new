@@ -1,0 +1,44 @@
+# --- OS / IDE ---
+*.log
+.DS_Store
+Thumbs.db
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.vscode
+/.zed
+.phpactor.json
+_ide_helper.php
+Homestead.json
+Homestead.yaml
+
+# --- Environment & secrets (never commit) ---
+.env
+.env.backup
+.env.production
+/auth.json
+
+# --- Dependencies ---
+/node_modules
+/vendor
+
+# --- Laravel runtime ---
+.phpunit.result.cache
+/.phpunit.cache
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+
+# NOTE: /public/build is intentionally NOT ignored — the compiled frontend
+# build is committed so the project can be deployed to shared hosting
+# without Node.js. Rebuild with `npm run build` when frontend sources change.
+
+# --- Local development artifacts ---
+/public/fonts-manifest.dev.json
+
+# --- Backups & user uploads (never commit) ---
+/backups
+/storage/app/public/uploads
+/storage/app/private/uploads

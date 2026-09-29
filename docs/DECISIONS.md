@@ -1,0 +1,119 @@
+# Decisions — MenoyeMan
+
+Architecture decisions and their rationale. Newest phases are appended at the bottom;
+each entry states the decision, why, and any consequence to remember.
+
+## Phase 1 — Foundation
+
+### D1. Laravel monolith with Blade + Tailwind + Alpine (no Livewire / Inertia)
+
+**Decision:** Server-rendered Blade views, Tailwind CSS 4, Alpine.js for interactivity,
+Chart.js for graphs. No Livewire, no Inertia, no SPA.
+**Why:** Must run on Iranian shared hosting (cPanel) with limited resources and no Node at
+runtime; prebuilt assets are committed to `public/build`. Alpine keeps the JS payload tiny and
+works with the "no external CDN" constraint.
+**Consequence:** Interactivity is small and localized; heavy UI updates use full page loads or
+smart polling.
+
+### D2. Single database, shared schema, `menu_id` + Global Scope tenancy
+
+**Decision:** One database; tenant-owned tables carry `menu_id`; `App\Scopes\MenuOwnedScope`
+filters every query automatically; `App\Support\TenantContext` holds the active menu.
+**Why:** Cheapest and simplest on shared hosting (no multi-DB provisioning, no per-tenant
+migrations). Forgetting a `where` clause cannot leak data because the scope is always applied.
+**Consequence:** Requires membership checks in middleware/policies (done) and *isolation tests* —
+`tests/Feature/Tenancy/TenantIsolationTest.php` asserts cross-tenant reads/writes fail.
+
+### D3. `TenantContext` uses static state — reset it in long-running processes
+
+**Decision:** `TenantContext` stores the current user/menu in static properties.
+**Why:** Zero-config access from models and scopes without passing a tenant object through every
+call stack; safe for classic PHP-FPM/HTTP where each request is a fresh process state.
+**Consequence (must not be forgotten):** statics persist inside `queue:work` workers and any
+long-lived process. When Phase 5/6 introduces queued jobs, **each job must reset/set the tenant
+context in its middleware/handle start**. Tests already reset it in `TestCase::setUp()`.
+
+### D4. Phone-first authentication with OTP, password as an alternative
+
+**Decision:** Registration/login via 11-digit Iranian mobile number (`09xxxxxxxxx`,
+normalized with Persian/Arabic digit support) and a 6-digit SMS OTP; password login remains
+available for owners who prefer it.
+**Why:** Standard, lowest-friction flow for Iranian users; SMS is the only reliable identifier.
+**Security:** OTP codes are stored **hashed**, expire after a few minutes, have a per-code attempt
+limit, and resend throttling. OTP rows are keyed by phone + purpose (`login`, `password_reset`).
+
+### D5. Multi-step session values must be `put()` (persistent), never flashed
+
+**Decision:** The OTP handshake stores `phone` / `otp_purpose` in the session with
+`$request->session()->put()`, and forgets them on success.
+**Why:** Laravel's `redirect()->with()` **flashes** — alive for exactly one subsequent request.
+The flow spans `POST /login` → `GET /login/verify` → `POST /login/verify` (and reset continues to
+`POST /panel/password/reset`), so flashed values vanish mid-flow. This was a real bug; the
+regression test is `test_forgot_password_flow_sets_new_password`.
+
+### D6. SMS behind a driver contract (log/fake locally, sms.ir in production)
+
+**Decision:** `SmsManager` resolves a driver from `config/sms.php`. Local/dev uses a log driver and
+may display the OTP on the verify page (`SMS_FAKE_DISPLAY=true`); production uses the sms.ir
+template API.
+**Why:** Developers and the owner must test the full flow without spending SMS credit or
+depending on a production key; production gets the real provider without code changes.
+
+### D7. Menu ID (slug) rules and the slug-check endpoint
+
+**Decision:** Menu IDs are `a-z0-9-`, 3–30 chars, no leading/trailing hyphen, globally unique, and
+must not collide with a reserved word list. `SlugRules` is the single source of truth and returns
+Persian error messages. The live check endpoint (`/panel/onboarding/slug-check`) ignores the
+caller's **own** menu id, so re-checking your current slug reports "available".
+**Why:** The ID appears in printed QR codes and public URLs; it must be predictable and safe.
+
+### D8. Changing a menu ID is a dangerous operation → explicit warning
+
+**Decision:** Phase 1 keeps the rule only; Phase 2 adds a confirmation dialog explaining that
+changing the menu ID **breaks every previously printed QR code and shared link**, and offers
+"keep the old address working for a limited time" (redirect) as the safe path.
+**Why:** Owners print QR codes on tables and stickers; silent renames break physical media.
+
+### D9. Weights (min/step) and rounding
+
+**Decision:** Weight-based items will define a minimum quantity and a step (e.g. min 250 g,
+step 250 g). Order quantities are validated server-side and **rounded to the nearest step,
+half-up**; the UI shows the rounding before submit.
+**Why:** Iranian menus sell by weight; unrounded values cause pricing disputes.
+**Consequence:** Revisit in Phase 4 when the cart is implemented; the rule is centralized in a
+single helper so the UI and server always agree.
+
+### D10. Money handling
+
+**Decision:** Prices are stored as integer IRR (Rial) in the database; all display is in **Toman**
+with Persian digits and thousand separators; prices are **always recomputed on the server** —
+client-submitted amounts are ignored.
+**Why:** No floating-point errors, no tampering with totals, single currency formatting source.
+
+### D11. Dates and locale
+
+**Decision:** Timestamps stored in UTC; displayed as Jalali dates in `Asia/Tehran` via
+`App\Support\JalaliDate` (morilog/jalali). `APP_LOCALE=fa`; all UI strings live in `lang/fa/`.
+**Why:** Persian users expect Jalali dates and Persian digits; storing UTC keeps calculations and
+future scheduling correct.
+
+### D12. No external runtime dependencies
+
+**Decision:** Vazirmatn (variable WOFF2) self-hosted in `resources/fonts`, Tailwind compiled and
+committed to `public/build`, Chart.js bundled locally, brand assets generated by
+`scripts/build-brand-assets.php`. No Google Fonts, no CDNs, no analytics, no reCAPTCHA.
+**Why:** Those services are blocked or unreliable in Iran and would break the site for customers.
+
+### D13. Background work via database queue + Cron
+
+**Decision:** `QUEUE_CONNECTION=database`, driven by `php artisan schedule:run` in Cron.
+**Why:** No Redis/supervisor provisioning on shared hosting. See D3 for the tenant-context
+consequence when jobs are introduced.
+
+### D14. Test database migrations under the php-wasm toolchain
+
+**Decision:** `tests/Concerns/RefreshesDatabase.php` wraps Laravel's `RefreshDatabase` and runs
+migrations through `Artisan::call('migrate')` instead of the `$this->artisan()` helper.
+**Why:** The helper crashes the php-wasm runtime used during development; behavior on real PHP
+is identical.
+**Consequence:** Use this trait in tests instead of `RefreshDatabase` directly.

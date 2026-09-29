@@ -1,0 +1,24 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-DDiBTtt7.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "assets": [
+      "assets/Vazirmatn-Variable-BeciDpKm.woff2"
+    ]
+  },
+  "resources/fonts/Vazirmatn-Variable.woff2": {
+    "file": "assets/Vazirmatn-Variable-BeciDpKm.woff2",
+    "src": "resources/fonts/Vazirmatn-Variable.woff2"
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-CFMFwMKh.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}
